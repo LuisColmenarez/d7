@@ -81,11 +81,21 @@ const { data: peticiones } = await supabase
         </div>
 		
 		<div class="grid grid-cols-1 gap-2">
-          <div class="flex flex-col gap-1">
-            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Nro. Contacto (Privado)</label>
-            <input type="tel" name="contacto_whatsapp" placeholder="Ej: 0412-XXXXXXX" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500" />
-          </div>
-        </div>
+			<div class="flex flex-col gap-1">
+				<label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+					Número de contacto (Opcional)
+				</label>
+				<input 
+					type="tel" 
+					name="contacto_whatsapp" 
+					placeholder="0412 123 4567" 
+					class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500" 
+				/>
+				<p class="text-[10px] text-slate-500 italic">
+					Si deseas que alguien te contacte por WhatsApp para orar contigo.
+				</p>
+			</div>
+		</div>
 
         <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white font-bold p-3.5 rounded-2xl text-sm transition-all shadow-lg active:scale-98 mt-2">
           Enviar Petición a la Red
