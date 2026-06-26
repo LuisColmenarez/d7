@@ -37,6 +37,24 @@ const { data: peticiones } = await supabase
 			A D I E L · D 7
 		</span>
 	</header>
+	<style>
+		@media print {
+			.btn-orar, 
+			.btn-enviar-respuesta, 
+			#muroPeticiones > article > div:last-child, /* Oculta cajas de respuesta */
+			.group {
+				display: none !important; 
+			}
+			
+			body { background: white !important; color: black !important; }
+			article { 
+				border: 1px solid #ddd !important; 
+				background: white !important; 
+				break-inside: avoid; 
+				margin-bottom: 10px; 
+			}
+		}
+	</style>
 
     <section class="bg-slate-900 border border-slate-800/80 rounded-3xl p-5 shadow-2xl backdrop-blur-md">
       <form id="formPeticion" class="flex flex-col gap-4">
@@ -110,7 +128,21 @@ const { data: peticiones } = await supabase
 	</div>
 
     <section class="flex flex-col gap-4">
-		<h2 class="text-xs font-bold uppercase tracking-widest text-slate-400 px-1">Muro de Clamor Reciente</h2>
+		<div class="flex justify-between items-center px-1">
+			<h2 class="text-xs font-bold uppercase tracking-widest text-slate-400">Muro de Clamor Reciente</h2>
+			
+			<div class="relative">
+				<button onclick="toggleMenu(event)" class="flex items-center gap-1.5 text-slate-400 hover:text-emerald-400 transition-colors text-[10px] font-bold uppercase tracking-wider bg-slate-900 px-2 py-1 rounded-md border border-slate-800">
+					<span>Exportar</span>
+					<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+				</button>
+
+				<div id="menu-exportar" class="absolute right-0 mt-1 w-24 bg-slate-900 border border-slate-800 rounded-lg shadow-xl hidden z-50">
+					<button onclick="exportarPDF()" class="block w-full text-left px-3 py-2 text-[10px] text-slate-300 hover:bg-slate-800 border-b border-slate-800 rounded-t-lg">PDF</button>
+					<button onclick="exportarExcel()" class="block w-full text-left px-3 py-2 text-[10px] text-slate-300 hover:bg-slate-800 rounded-b-lg">Excel</button>
+				</div>
+			</div>
+		</div>
 		
 		<div class="flex flex-col gap-4" id="muroPeticiones">
 			{peticiones && peticiones.map((p) => {
@@ -168,6 +200,7 @@ const { data: peticiones } = await supabase
 			})}
 		</div>
 	</section>
+
 	<div class="flex justify-between items-center mt-8 px-2">
 		{page > 1 ? (
 			<a href={`/?page=${page - 1}`} class="text-xs font-bold text-slate-400 hover:text-white">
@@ -196,6 +229,112 @@ const { data: peticiones } = await supabase
 	</div>
   </main>
 </Layout>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+<script is:inline>
+  function toggleMenu(event) {
+    event.stopPropagation();
+    const menu = document.getElementById('menu-exportar');
+    menu.classList.toggle('hidden');
+  }
+
+  document.addEventListener('click', function(event) {
+    const menu = document.getElementById('menu-exportar');
+    if (!menu.contains(event.target)) {
+      menu.classList.add('hidden');
+    }
+  });
+  
+  const COL_MAP = {
+    creado_en: "Fecha",
+    motivo: "Motivo de Oración",
+    nombre: "Autor",
+    ciudad_sector: "Ciudad o Sector",
+    iglesia: "Iglesia"
+  };
+
+  async function exportarExcel() {
+    const response = await fetch('/api/exportar.json');
+    const data = await response.json();
+
+    // 1. Definimos los encabezados amigables
+    const headers = ["Fecha", "Motivo de Oración", "Autor / Solicitante", "Ciudad o Sector", "Iglesia"];
+
+    // 2. Transformamos los datos
+    const dataFormateada = data.map(p => [
+      new Date(p.creado_en).toLocaleDateString(),
+      p.motivo,
+      p.nombre || 'Anónimo',
+      p.ciudad_sector,
+      p.iglesia || 'No especifica'
+    ]);
+
+    // 3. Unimos todo: Títulos + Fila vacía + Encabezados + Datos
+    const finalData = [
+      ["REPORTE DE MOTIVOS DE ORACIONES"],
+      ["Red de Apoyo de Oración - Distrito 7 ADIEL"],
+      [], 
+      headers,
+      ...dataFormateada
+    ];
+
+    // 4. Creamos la hoja desde este arreglo combinado
+    const worksheet = XLSX.utils.aoa_to_sheet(finalData);
+
+    // 5. Aplicamos los merges para los títulos
+    worksheet['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, // Fusionar título 1
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }  // Fusionar título 2
+    ];
+
+    // 6. Ajuste de anchos
+    worksheet['!cols'] = [
+      { wch: 15 }, { wch: 60 }, { wch: 20 }, { wch: 20 }, { wch: 20 }
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Peticiones");
+    XLSX.writeFile(workbook, "Reporte_Motivos_Oraciones_D7.xlsx");
+  }
+
+  async function exportarPDF() {
+    const response = await fetch('/api/exportar.json');
+    const data = await response.json();
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape' }); // Horizontal para más espacio
+
+    // Títulos
+    doc.setFontSize(18);
+    doc.text("Reporte de Motivos de Oraciones", 14, 15);
+    doc.setFontSize(12);
+    doc.text("Red de Apoyo de Oración - Distrito 7 ADIEL", 14, 22);
+
+    const tableData = data.map(p => [
+        new Date(p.creado_en).toLocaleDateString(), 
+        p.motivo, 
+        p.nombre || 'Anónimo', 
+        p.ciudad_sector
+    ]);
+
+    doc.autoTable({
+        head: [['Fecha', 'Motivo de Oración', 'Autor', 'Ciudad']],
+        body: tableData,
+        startY: 30,
+        columnStyles: {
+            1: { cellWidth: 100 }, // Motivo ancho
+            0: { cellWidth: 25 }
+        },
+        styles: { fontSize: 9, cellPadding: 2 },
+        headStyles: { fillColor: [41, 128, 185] } // Azul corporativo
+    });
+
+    doc.save("Reporte_Motivo_Oraciones_D7.pdf");
+  }
+</script>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
