@@ -49,7 +49,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (botToken && chatId) {
       const enlaceOrar = `${urlBase}/api/orar-telegram?id=${idPeticion}`;
       console.log("🔗 Enlace generado para Telegram:", enlaceOrar);
-      const mensajeTelegram = `🇻🇪 <b>Nueva Petición Nacional ADIEL</b>\n\n` +
+      const mensajeTelegram = `🇻🇪 <b>Nueva Petición Nacional</b>\n\n` +
                               `🏢 <b>Ubicación:</b> ${ciudad_sector}\n` +
                               `👤 <b>Nombre:</b> ${nombre || 'Anónimo'}\n` +
                               `⛪ <b>Iglesia:</b> ${iglesia || 'Ninguna / No especifica'}\n` +

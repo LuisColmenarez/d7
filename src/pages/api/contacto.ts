@@ -20,12 +20,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (botToken && chatIdContactos) {
       // Formato limpio y estructurado para la directiva D7
-      const mensajeTelegram = `🔔 *Nueva Solicitud de Contacto Pastoral D7*\n\n` +
+      const mensajeTelegram = `🔔 *Nueva Solicitud de Contacto D7*\n\n` +
                         `👤 *Nombre:* ${nombre}\n` +
                         `📍 *Dirección:* ${direccion}\n` +
                         `📞 *WhatsApp:* ${whatsapp}\n\n` +
                         `📝 *Detalle de la Solicitud:*\n_${nota}_\n\n` +
-                        `⚡ _Atención inmediata - Distrito 7 ADIEL_`;
+                        `⚡ _Atención inmediata_`;
 
       // Despachamos al canal de contactos
       await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
