@@ -1,0 +1,110 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Sobre ADIEL y D7 | Red Nacional de Apoyo">
+  <main class="max-w-md mx-auto min-h-screen p-4 flex flex-col gap-5 pb-16">
+    
+    <!-- Botón de regreso al Muro principal -->
+    <div class="mt-2">
+      <a href="/" class="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1.5 transition-colors">
+        <span>←</span> Volver al Muro de Oración
+      </a>
+    </div>
+
+    <!-- Cabecera Oficial Nacional -->
+    <header class="text-center flex flex-col items-center gap-1">
+      <div class="bg-gradient-to-r from-blue-500 to-emerald-500 text-slate-950 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
+        Asociación Nacional ADIEL
+      </div>
+      <h1 class="text-xl font-black tracking-tight text-slate-100 mt-1">
+        Asociación de Iglesias Evangélicas Libres de Venezuela
+      </h1>
+      <p class="text-xs text-slate-400 px-4 leading-relaxed">
+        Una cobertura eclesiástica nacional dedicada al servicio integral, la restauración espiritual y la contención comunitaria en todo el país.
+      </p>
+    </header>
+
+    <!-- Bloque de Identidad Operativa: Distrito 7 y Juventud -->
+    <section class="bg-slate-900 border border-slate-800/60 rounded-3xl p-5 flex flex-col gap-4">
+      <div>
+        <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-400">Impulso y Coordinación Regional</h2>
+        <p class="text-xs text-slate-300 leading-relaxed font-light mt-1">
+          Esta plataforma es una iniciativa desarrollada y coordinada por la <strong>Directiva General del Distrito 7 (Carabobo)</strong>, levantada con urgencia para brindar respuesta rápida ante el temor por los sismos recientes y permaneciendo activa como un canal de soporte tecnológico y espiritual ante cualquier otra dificultad que afecte a nuestras comunidades a nivel nacional.
+        </p>
+      </div>
+
+      <div class="border-t border-slate-800/50 pt-3">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+          🔥 Libres Jóvenes ADIEL - D7
+        </h2>
+        <p class="text-xs text-slate-300 leading-relaxed font-light mt-1">
+          Es la Unidad de Servicio de nuestra asociación enfocada en la juventud. Bajo el respaldo del equipo distrital del D7, asumimos la visión de <strong>apoyar, desarrollar y fortalecer</strong> los ministerios locales, proveyendo acompañamiento integral y herramientas útiles en tiempos de dificultad.
+        </p>
+      </div>
+    </section>
+
+    <!-- Formulario de Contacto Pastoral Directo -->
+    <section class="bg-slate-900 border border-slate-800/80 rounded-3xl p-5 shadow-2xl">
+      <div class="mb-4">
+        <h2 class="text-sm font-bold text-slate-100">¿Deseas comunicarte con nosotros?</h2>
+        <p class="text-[11px] text-slate-400 mt-0.5">Si necesitas consejería, reportar una necesidad prioritaria en tu sector o contactar al liderazgo, déjanos tus datos.</p>
+      </div>
+
+      <form id="formContactoMinisterio" class="flex flex-col gap-3.5">
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Tu Nombre *</label>
+          <input type="text" name="nombre" required placeholder="Ej: Luis Miguel" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500" />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Dirección o Sector de Residencia *</label>
+          <input type="text" name="direccion" required placeholder="Ej: Valencia" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500" />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Teléfono de Contacto (WhatsApp) *</label>
+          <input type="tel" name="whatsapp" required placeholder="Ej: 0412-XXXXXXX" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500" />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">¿En qué podemos ayudarte? *</label>
+          <textarea name="nota" required placeholder="Describe brevemente cómo podemos servirte desde el equipo de trabajo..." rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 resize-none"></textarea>
+        </div>
+
+        <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white font-bold p-3 rounded-xl text-xs transition-all shadow-lg active:scale-98 mt-1">
+          Enviar Mensaje
+        </button>
+      </form>
+    </section>
+
+  </main>
+</Layout>
+
+<script>
+  const form = document.getElementById('formContactoMinisterio') as HTMLFormElement;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData.entries());
+
+    try {
+      // Apuntamos al nuevo endpoint de contacto
+      const res = await fetch('/api/contacto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (res.ok) {
+        alert('🙏 Solicitud recibida. El equipo pastoral o de Libres Jóvenes del Distrito 7 se comunicará contigo a la brevedad.');
+        form.reset();
+      } else {
+        alert('Ocurrió un inconveniente al enviar tu solicitud de contacto.');
+      }
+    } catch {
+      alert('Error de red. Por favor verifica tu conexión.');
+    }
+  });
+</script>

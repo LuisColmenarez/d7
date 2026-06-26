@@ -1,11 +1,378 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
+import { createClient } from '@supabase/supabase-js';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+const page = parseInt(Astro.url.searchParams.get('page') || '1');
+const pageSize = 3;
+const from = (page - 1) * pageSize;
+const to = from + pageSize - 1;
+
+const { data: peticiones } = await supabase
+  .from('peticiones')
+  .select(`
+    id, nombre, emocion, motivo, ciudad_sector, iglesia, contador_oraciones, creado_en,
+    respuestas ( id, autor, contenido, creado_en )
+  `)
+  .order('creado_en', { ascending: false }) // Cambiado a fecha para mayor precisión
+  .range(from, to); // Esto sustituye al .limit(20)
 ---
 
-<Layout>
-	<Welcome />
+<Layout title="Red de Apoyo y Clamor | Venezuela">
+  <main class="max-w-md mx-auto min-h-screen p-4 flex flex-col gap-6 pb-16">
+    
+    <header class="text-center mt-3 flex flex-col items-center gap-1">
+		<h1 class="text-2xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-slate-200 to-emerald-400 bg-clip-text text-transparent">
+			Red de Apoyo y Oración
+		</h1>
+		<p class="text-xs text-slate-400 mt-0.5 px-6 leading-relaxed">
+			Acompañándote en fe ante los sismos y dificultades recientes. Registra tu petición o sector y únete al clamor nacional. 🇻🇪
+		</p>
+
+		<span class="text-[9px] font-bold tracking-[0.25em] text-slate-500 uppercase bg-slate-800/20 px-2 py-0.5 rounded-md border border-slate-800/30 select-none inline-block mt-0.5">
+			A D I E L · D 7
+		</span>
+	</header>
+
+    <section class="bg-slate-900 border border-slate-800/80 rounded-3xl p-5 shadow-2xl backdrop-blur-md">
+      <form id="formPeticion" class="flex flex-col gap-4">
+        
+        <div>
+          <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2">¿Cómo te sientes en este momento?</label>
+          <input type="hidden" name="emocion" id="inputEmocion" required />
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" data-val="Asustado(a) 😰" class="btn-emocion bg-slate-950 p-3 rounded-2xl border border-slate-800 text-sm flex flex-col items-center gap-1 transition-all active:scale-95">
+              <span class="text-2xl">😰</span> <span class="text-xs text-slate-300">Asustado</span>
+            </button>
+            <button type="button" data-val="Triste 💔" class="btn-emocion bg-slate-950 p-3 rounded-2xl border border-slate-800 text-sm flex flex-col items-center gap-1 transition-all active:scale-95">
+              <span class="text-2xl">💔</span> <span class="text-xs text-slate-300">Triste</span>
+            </button>
+            <button type="button" data-val="Con Fe 🙏" class="btn-emocion bg-slate-950 p-3 rounded-2xl border border-slate-800 text-sm flex flex-col items-center gap-1 transition-all active:scale-95">
+              <span class="text-2xl">🙏</span> <span class="text-xs text-slate-300">Con Fe</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">¿Cuál es tu necesidad o motivo de oración?</label>
+          <textarea name="motivo" required placeholder="Escribe aquí lo que tienes en tu corazón..." rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500 transition-colors resize-none"></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div class="flex flex-col gap-1">
+            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Tu Nombre (Opcional)</label>
+            <input type="text" name="nombre" placeholder="Ej: Juan o Anónimo" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">¿Asistes a una Iglesia?</label>
+            <input type="text" name="iglesia" placeholder="Iglesia (opcional)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-2">
+          <div class="flex flex-col gap-1">
+			<label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Ciudad o Sector *</label>
+			<input type="text" name="ciudad_sector" required placeholder="Ej: La Guaira" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500" />
+		  </div>
+        </div>
+		
+		<div class="grid grid-cols-1 gap-2">
+          <div class="flex flex-col gap-1">
+            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Nro. Contacto (Privado)</label>
+            <input type="tel" name="contacto_whatsapp" placeholder="Ej: 0412-XXXXXXX" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500" />
+          </div>
+        </div>
+
+        <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white font-bold p-3.5 rounded-2xl text-sm transition-all shadow-lg active:scale-98 mt-2">
+          Enviar Petición a la Red
+        </button>
+      </form>
+    </section>
+	
+	<div class="mt-5 mb-3 flex justify-center w-full">
+		<a href="/ministerio" class="inline-flex items-center gap-1.5 bg-slate-900 border border-slate-800 hover:border-slate-700 px-4 py-2 rounded-full text-[11px] text-blue-400 font-medium transition-all shadow-sm active:scale-95">
+			ℹ️ Sobre el Distrito 7 (ADIEL) y Contacto Directo
+		</a>
+	</div>
+
+    <section class="flex flex-col gap-4">
+		<h2 class="text-xs font-bold uppercase tracking-widest text-slate-400 px-1">Muro de Clamor Reciente</h2>
+		
+		<div class="flex flex-col gap-4" id="muroPeticiones">
+			{peticiones && peticiones.map((p) => {
+			// Formateo de fecha para cada petición
+			const fechaFormateada = new Date(p.creado_en).toLocaleDateString('es-VE', {
+				day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit'
+			});
+
+			return (
+				<article class="bg-slate-900 border border-slate-800/60 rounded-2xl p-4 shadow-md flex flex-col gap-3">
+				
+				<div class="flex justify-between items-start gap-2">
+					<span class="text-[11px] font-semibold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-full">{p.emocion}</span>
+					<div class="text-right flex flex-col">
+					<span class="text-[10px] text-slate-400 font-medium">📍 {p.ciudad_sector}</span>
+					<span class="text-[9px] text-slate-500">⛪ {p.iglesia}</span>
+					<span class="text-[10px] text-blue-500 font-mono tracking-tight mt-0.5">{fechaFormateada}</span>
+					</div>
+				</div>
+
+				<p class="text-sm text-slate-200 leading-relaxed font-light">"{p.motivo}"</p>
+				
+				<div class="text-xs text-slate-400 font-medium border-b border-slate-800/50 pb-2">
+					— Por: <span class="text-slate-300 font-semibold">{p.nombre}</span>
+				</div>
+
+				<div class="flex justify-between items-center pt-1 text-xs">
+					<button data-id={p.id} class="btn-orar flex items-center gap-1.5 text-slate-400 hover:text-emerald-400 transition-colors bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 active:scale-95">
+					<span>🙏</span> 
+					<span>Orando (<strong class="text-slate-200 font-medium text-xs">{p.contador_oraciones || 0}</strong>)</span>
+					</button>
+				</div>
+
+				<div class="flex flex-col gap-1.5 bg-slate-950/60 rounded-xl p-2 empty:hidden">
+					{p.respuestas && (p.respuestas as any[]).map((r) => (
+					<div class="text-xs border-b border-slate-900 last:border-0 pb-1.5 mb-1.5 last:pb-0 last:mb-0">
+						<span class="text-emerald-400 font-semibold block text-[10px]">{r.autor}:</span>
+						<p class="text-slate-300 italic">"{r.contenido}"</p>
+					</div>
+					))}
+				</div>
+
+				<div id={`box-respuesta-${p.id}`} class="hidden flex-col gap-2 mt-2 pt-2 border-t border-slate-800/40">
+					<input type="text" id={`autor-${p.id}`} placeholder="Tu Nombre/Iglesia" class="bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500" />
+					<div class="flex gap-2">
+					<input type="text" id={`content-${p.id}`} placeholder="Escribe un mensaje, respuesta o aviso..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500" />
+					<button data-id={p.id} class="btn-enviar-respuesta bg-blue-600 text-white px-3 py-2 rounded-xl text-xs font-bold active:scale-95">
+						Enviar
+					</button>
+					</div>
+				</div>
+
+				</article>
+			);
+			})}
+		</div>
+	</section>
+	<div class="flex justify-between items-center mt-8 px-2">
+		{page > 1 ? (
+			<a href={`/?page=${page - 1}`} class="text-xs font-bold text-slate-400 hover:text-white">
+			← Página anterior
+			</a>
+		) : <div />}
+
+		<span class="text-[10px] text-slate-600 font-bold uppercase">Página {page}</span>
+
+		{peticiones && peticiones.length === pageSize && (
+			<a href={`/?page=${page + 1}`} class="text-xs font-bold text-blue-500 hover:text-blue-400">
+			Siguiente página →
+			</a>
+		)}
+	</div>
+
+	<div id="modalOracion" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+		<div class="bg-slate-900 border border-blue-500/50 p-6 rounded-2xl max-w-sm w-full text-center shadow-2xl">
+			<div class="text-4xl mb-4">🙏</div>
+			<h3 class="text-white text-xl font-bold mb-2">¡Gracias por orar!</h3>
+			<p class="text-slate-400 mb-6">Tu apoyo ha sido registrado. Que Dios bendiga tu vida y la de quien recibe este clamor.</p>
+			<button id="cerrarModal" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all">
+			Cerrar
+			</button>
+		</div>
+	</div>
+  </main>
 </Layout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const modal = document.getElementById('modalOracion');
+    const btnCerrar = document.getElementById('cerrarModal');
+    const mensajeModal = document.getElementById('mensajeModal');
+
+    if (params.get('orando') === 'true') {
+      const idPeticion = params.get('id');
+      
+      // Mostrar modal
+      modal?.classList.remove('hidden');
+      
+      // Personalizar mensaje si existe el ID
+      if (idPeticion && mensajeModal) {
+        mensajeModal.innerText = `Tu apoyo para la petición #${idPeticion} ha sido registrado. ¡Dios te bendiga!`;
+      }
+      
+      // Limpiar URL para que no vuelva a salir si refrescan
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    btnCerrar?.addEventListener('click', () => {
+      modal?.classList.add('hidden');
+    });
+  });
+  // 1. Selector de Emociones Visuales
+  const botonesEmocion = document.querySelectorAll('.btn-emocion');
+  const inputEmocion = document.getElementById('inputEmocion') as HTMLInputElement;
+
+  botonesEmocion.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      botonesEmocion.forEach(b => {
+        b.classList.remove('border-blue-500', 'bg-blue-950/80', 'ring-2', 'ring-blue-500/30');
+        b.classList.add('border-slate-800', 'bg-slate-950');
+      });
+
+      btn.classList.remove('border-slate-800', 'bg-slate-950');
+      btn.classList.add('border-blue-500', 'bg-blue-950/80', 'ring-2', 'ring-blue-500/30');
+      
+      inputEmocion.value = btn.getAttribute('data-val') || '';
+    });
+  });
+
+  // 2. Envío del Formulario de Peticiones con Validaciones Robustas
+  const form = document.getElementById('formPeticion') as HTMLFormElement;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // Validar Selección de Emoción
+    if (!inputEmocion.value) {
+      alert('Por favor, selecciona cómo te sientes usando los emojis antes de enviar.');
+      return;
+    }
+
+    const formData = new FormData(form);
+    
+    // Extraemos y limpiamos espacios de los campos clave
+	const nombre = (formData.get('nombre') as string || '').trim();
+    const iglesia = (formData.get('iglesia') as string || '').trim();
+    const motivo = (formData.get('motivo') as string || '').trim();
+    const ubicacion = (formData.get('ciudad_sector') as string || '').trim();
+    const telefono = (formData.get('contacto_whatsapp') as string || '').trim();
+
+    if (nombre.length > 0) {
+      if (nombre.length < 3) {
+        alert('Si deseas incluir tu nombre, por favor ingresa al menos 3 caracteres.');
+        return;
+      }
+      // Regex que solo permite letras, espacios y caracteres acentuados
+      const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+      if (!regexNombre.test(nombre)) {
+        alert('Por favor, ingresa un nombre válido (solo letras y espacios, sin números ni símbolos).');
+        return;
+      }
+    }
+
+    
+    if (iglesia.length > 0) {
+      if (iglesia.length < 4) {
+        alert('Por favor, ingresa un nombre de iglesia más descriptivo (mínimo 4 caracteres).');
+        return;
+      }
+    }
+
+    if (motivo.length < 10) {
+      alert('Por favor, describe tu motivo de oración con un poco más de detalle (mínimo 10 caracteres).');
+      return;
+    }
+
+    // B. Validación de la Dirección / Sector (Texto mediano)
+    if (ubicacion.length < 6 || ubicacion.length > 100) {
+      alert('Por favor, ingresa una ubicación o sector válido (debe tener entre 6 y 100 caracteres).');
+      return;
+    }
+
+    // C. Validación del Teléfono (Solo si el usuario ingresó datos)
+    if (telefono.length > 0) {
+      // Valida números internacionales (con o sin '+', acepta espacios/guiones y exige entre 7 y 15 dígitos reales)
+      const regexTelfInternacional = /^\+?[\d\s\-]{7,15}$/;
+      
+      if (!regexTelfInternacional.test(telefono)) {
+        alert('Por favor, ingresa un número de teléfono válido. Si es del extranjero, puedes incluir el código de país (Ej: +57 300 XXX XXXX).');
+        return;
+      }
+    }
+
+    const payload = Object.fromEntries(formData.entries());
+
+    try {
+      const res = await fetch('/api/peticion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (res.ok) {
+        alert('🙏 Tu petición de oración ha sido recibida y enviada a la red con éxito.');
+        form.reset();
+        window.location.reload();
+      } else {
+        alert('Ocurrió un inconveniente en el servidor al procesar tu petición.');
+      }
+    } catch {
+      alert('Error de red. Revisa tu conexión a internet.');
+    }
+  });
+
+  // 3. Acción del Botón "Orando"
+  const botonesOrar = document.querySelectorAll('.btn-orar');
+  botonesOrar.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      try {
+        const res = await fetch('/api/orar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        if (res.ok) {
+          window.location.reload();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  });
+
+  // 4. Desplegar caja de respuestas
+  const botonesAbrirRespuesta = document.querySelectorAll('.btn-abrir-respuesta');
+  botonesAbrirRespuesta.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      const box = document.getElementById(`box-respuesta-${id}`);
+      box?.classList.toggle('hidden');
+      box?.classList.toggle('flex');
+    });
+  });
+
+  // 5. Enviar Comentario / Respuesta Genérica
+  const botonesEnviarRespuesta = document.querySelectorAll('.btn-enviar-respuesta');
+  botonesEnviarRespuesta.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const autorInput = document.getElementById(`autor-${id}`) as HTMLInputElement;
+      const contentInput = document.getElementById(`content-${id}`) as HTMLInputElement;
+
+      if (!contentInput.value.trim()) return;
+
+      try {
+        const res = await fetch('/api/respuesta', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            peticion_id: id,
+            autor: autorInput.value || 'Anónimo',
+            contenido: contentInput.value
+          })
+        });
+        if (res.ok) {
+          alert('Respuesta registrada con éxito.');
+          window.location.reload();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  });
+</script>
