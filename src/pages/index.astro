@@ -30,7 +30,7 @@ const { data: peticiones } = await supabase
 			Red de Apoyo y Oración
 		</h1>
 		<p class="text-xs text-slate-400 mt-0.5 px-6 leading-relaxed">
-			Acompañándote en fe ante los sismos y dificultades recientes. Registra tu petición y únete al clamor nacional. 🇻🇪
+			Acompañándote en fe ante las dificultades recientes. Registra tu petición y únete al clamor nacional. 🇻🇪
 		</p>
 
 		<span class="text-[9px] font-bold tracking-[0.25em] text-slate-500 uppercase bg-slate-800/20 px-2 py-0.5 rounded-md border border-slate-800/30 select-none inline-block mt-0.5">
@@ -127,7 +127,7 @@ const { data: peticiones } = await supabase
 		</a>
 	</div>
 
-    <section class="flex flex-col gap-4">
+  <section id="muroDeClamor" class="flex flex-col gap-4">
 		<div class="flex justify-between items-center px-1">
 			<h2 class="text-xs font-bold uppercase tracking-widest text-slate-400">Muro de Clamor Reciente</h2>
 			
@@ -227,6 +227,33 @@ const { data: peticiones } = await supabase
 			</button>
 		</div>
 	</div>
+
+  <div id="modalOrar" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full text-center shadow-2xl">
+        <h3 class="text-white text-lg font-bold mb-2">¡Gracias por unirte en oración!</h3>
+        <p class="text-slate-400 text-sm mb-4">Tu apoyo suma al clamor. Si deseas, escribe un mensaje de aliento:</p>
+        <input type="text" id="autorOracion" placeholder="Tu nombre (opcional)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 mb-2 text-sm text-white" />
+        <textarea id="comentarioOracion" placeholder="Deja un mensaje de ánimo (opcional)..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 mb-4 text-sm text-white h-20 resize-none"></textarea>
+        <div class="flex gap-2">
+            <button id="btnEnviarOracion" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Confirmar</button>
+        </div>
+    </div>
+  </div>
+
+  <div id="modalConfirmacion" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+    <div class="bg-slate-900/90 border border-slate-800 p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl">
+        <div class="text-3xl mb-4 opacity-80">🙏</div>
+        
+        <h3 class="text-slate-100 text-lg font-semibold mb-2">Petición registrada</h3>
+        <p class="text-slate-500 text-sm mb-8 leading-relaxed">
+            Tu clamor ha sido recibido. Ya hay un grupo de personas acompañándote en oración.
+        </p>
+        
+        <button id="cerrarModalConfirmacion" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-xl transition-all active:scale-95">
+            Entendido
+        </button>
+    </div>
+</div>
   </main>
 </Layout>
 
@@ -339,29 +366,75 @@ const { data: peticiones } = await supabase
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
-    const modal = document.getElementById('modalOracion');
-    const btnCerrar = document.getElementById('cerrarModal');
-    const mensajeModal = document.getElementById('mensajeModal');
+    
+    if (params.get('muro') === 'true') {
+      console.log("Murooooo");
+      const muro = document.getElementById('muroDeClamor');
+      setTimeout(() => {
+        muro?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 500);
 
-    if (params.get('orando') === 'true') {
-      const idPeticion = params.get('id');
-      
-      // Mostrar modal
-      modal?.classList.remove('hidden');
-      
-      // Personalizar mensaje si existe el ID
-      if (idPeticion && mensajeModal) {
-        mensajeModal.innerText = `Tu apoyo para la petición #${idPeticion} ha sido registrado. ¡Dios te bendiga!`;
-      }
-      
-      // Limpiar URL para que no vuelva a salir si refrescan
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-
-    btnCerrar?.addEventListener('click', () => {
-      modal?.classList.add('hidden');
-    });
   });
+  const modalOrar = document.getElementById('modalOrar');
+  const modalConfirmacion = document.getElementById('modalConfirmacion');
+  const btnCerrarOrar = document.getElementById('cerrarModalConfirmacion');
+  const btnEnviarOracion = document.getElementById('btnEnviarOracion');
+  let idActivo = null;
+
+  // 2. Función para abrir modal y capturar ID
+  function abrirModalOrar(id) {
+    idActivo = id;
+    modalOrar.classList.remove('hidden');
+  }
+
+  document.querySelectorAll('.btn-orar').forEach(btn => {
+    btn.addEventListener('click', () => abrirModalOrar(btn.getAttribute('data-id')));
+  });
+
+  btnCerrarOrar?.addEventListener('click', () => {
+    modalConfirmacion.classList.add('hidden');
+    window.location.href = '/?muro=true';
+  });
+
+  btnEnviarOracion?.addEventListener('click', async () => {
+    const autor = document.getElementById('autorOracion').value;
+    const contenido = document.getElementById('comentarioOracion').value;
+    if (!idActivo) return;
+
+    // Ejecutar acciones (API)
+    await fetch('/api/orar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: idActivo })
+    });
+
+    if (contenido.trim()) {
+      await fetch('/api/respuesta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ peticion_id: idActivo, autor: autor || 'Anónimo', contenido: contenido })
+      });
+    }
+    window.location.href = '/?muro=true';
+  });
+
+  // 4. Lógica de Parámetros URL (Carga inicial)
+  document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    
+    // Si viene por parámetro, abrimos automáticamente
+    if (params.get('orando') === 'true') {
+      const idParam = params.get('id');
+      if (idParam) {
+        abrirModalOrar(idParam);
+      }
+      
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  });
+
   // 1. Selector de Emociones Visuales
   const botonesEmocion = document.querySelectorAll('.btn-emocion');
   const inputEmocion = document.getElementById('inputEmocion') as HTMLInputElement;
@@ -394,7 +467,7 @@ const { data: peticiones } = await supabase
     const formData = new FormData(form);
     
     // Extraemos y limpiamos espacios de los campos clave
-	const nombre = (formData.get('nombre') as string || '').trim();
+	  const nombre = (formData.get('nombre') as string || '').trim();
     const iglesia = (formData.get('iglesia') as string || '').trim();
     const motivo = (formData.get('motivo') as string || '').trim();
     const ubicacion = (formData.get('ciudad_sector') as string || '').trim();
@@ -453,35 +526,14 @@ const { data: peticiones } = await supabase
       });
       
       if (res.ok) {
-        alert('🙏 Tu petición de oración ha sido recibida y enviada a la red con éxito.');
+        document.getElementById('modalConfirmacion').classList.remove('hidden');
         form.reset();
-        window.location.reload();
       } else {
         alert('Ocurrió un inconveniente en el servidor al procesar tu petición.');
       }
     } catch {
       alert('Error de red. Revisa tu conexión a internet.');
     }
-  });
-
-  // 3. Acción del Botón "Orando"
-  const botonesOrar = document.querySelectorAll('.btn-orar');
-  botonesOrar.forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.getAttribute('data-id');
-      try {
-        const res = await fetch('/api/orar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id })
-        });
-        if (res.ok) {
-          window.location.reload();
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    });
   });
 
   // 4. Desplegar caja de respuestas

@@ -2,17 +2,16 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.PUBLIC_SUPABASE_URL || '',
-  process.env.PUBLIC_SUPABASE_ANON_KEY || ''
-);
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
     const { peticion_id, autor, contenido } = body;
 
-    // Validación estructural básica
     if (!peticion_id || !contenido) {
       return new Response(JSON.stringify({ error: 'El ID de la petición y el contenido son obligatorios.' }), { 
         status: 400,
