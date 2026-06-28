@@ -48,7 +48,6 @@ export const POST: APIRoute = async ({ request }) => {
     const urlBase = request.headers.get('origin') || 'https://tu-dominio-oficial.com';
     if (botToken && chatId) {
       const enlaceOrar = `${urlBase}/api/orar-telegram?id=${idPeticion}`;
-      console.log("🔗 Enlace generado para Telegram:", enlaceOrar);
       const mensajeTelegram = `🇻🇪 <b>Nueva Petición Nacional</b>\n\n` +
                               `🏢 <b>Ubicación:</b> ${ciudad_sector}\n` +
                               `👤 <b>Nombre:</b> ${nombre || 'Anónimo'}\n` +
@@ -56,8 +55,7 @@ export const POST: APIRoute = async ({ request }) => {
                               `🎭 <b>Se siente:</b> ${emocion}\n` +
                               `📝 <b>Motivo:</b> ${motivo}\n` +
                               `📞 <b>Contacto:</b> ${contacto_whatsapp || 'Ninguno'}\n\n` +
-                              `🙏 <b>Para marcar que oraste por esta petición, abre este enlace:</b>\n` +
-                              `${enlaceOrar}\n\n` +
+                              `🙏 <b>Para marcar estás orando por esta petición</b> <a href="${enlaceOrar}">Presiona aqui</a>\n\n` +
                               `⚡ <i>Enviado desde la Red de Soporte y Oración</i>`;
 
       try {
