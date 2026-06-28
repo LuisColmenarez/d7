@@ -409,13 +409,19 @@ const { data: peticiones } = await supabase
     const params = new URLSearchParams(window.location.search);
     
     if (params.get('muro') === 'true') {
-      console.log("Murooooo");
       const muro = document.getElementById('muroDeClamor');
       setTimeout(() => {
         muro?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 500);
 
       window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    if (params.get('page')) {
+      const muro = document.getElementById('muroDeClamor');
+      setTimeout(() => {
+        muro?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 500);
     }
   });
   const modalOrar = document.getElementById('modalOrar');
