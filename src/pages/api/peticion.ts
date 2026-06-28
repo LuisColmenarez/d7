@@ -55,7 +55,7 @@ export const POST: APIRoute = async ({ request }) => {
                               `🎭 <b>Se siente:</b> ${emocion}\n` +
                               `📝 <b>Motivo:</b> ${motivo}\n` +
                               `📞 <b>Contacto:</b> ${contacto_whatsapp || 'Ninguno'}\n\n` +
-                              `🙏 <b>Para marcar estás orando por esta petición</b> <a href="${enlaceOrar}">Presiona aqui</a>\n\n` +
+                              `🙏 <b>Para marcar que estás orando por esta petición</b> <a href="${enlaceOrar}">Presiona aqui</a>\n\n` +
                               `⚡ <i>Enviado desde la Red de Soporte y Oración</i>`;
 
       try {
