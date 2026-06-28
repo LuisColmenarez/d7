@@ -287,44 +287,62 @@ const { data: peticiones } = await supabase
     const response = await fetch('/api/exportar.json');
     const data = await response.json();
 
-    // 1. Definimos los encabezados amigables
-    const headers = ["Fecha", "Motivo de Oración", "Autor / Solicitante", "Ciudad o Sector", "Iglesia"];
+    const headers = ["Fecha", "Motivo de Oración", "Autor", "Localidad", "Iglesia"];
 
-    // 2. Transformamos los datos
-    const dataFormateada = data.map(p => [
-      new Date(p.creado_en).toLocaleDateString(),
-      p.motivo,
-      p.nombre || 'Anónimo',
-      p.ciudad_sector,
-      p.iglesia || 'No especifica'
-    ]);
+    const dataFormateada = data.map(p => {
+      const fecha = new Date(p.creado_en);
+      const dd = String(fecha.getDate()).padStart(2, '0');
+      const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+      const yyyy = fecha.getFullYear();
+      const fechaFormateada = `${dd}/${mm}/${yyyy}`;
 
-    // 3. Unimos todo: Títulos + Fila vacía + Encabezados + Datos
+      return [
+          fechaFormateada,
+          p.motivo,
+          p.nombre || 'Anónimo',
+          p.ciudad_sector,
+          p.iglesia || 'No especifica'
+      ];
+    });
+
     const finalData = [
       ["REPORTE DE MOTIVOS DE ORACIONES"],
-      ["Red de Apoyo de Oración - Distrito 7 ADIEL"],
-      [], 
+      ["Plataforma de Red de Apoyo en Oración ADIEL-D7"],
+      [], // Fila de separación
       headers,
       ...dataFormateada
     ];
 
-    // 4. Creamos la hoja desde este arreglo combinado
     const worksheet = XLSX.utils.aoa_to_sheet(finalData);
 
-    // 5. Aplicamos los merges para los títulos
+    // 1. Mejoramos los merges
     worksheet['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, // Fusionar título 1
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }  // Fusionar título 2
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }
     ];
 
-    // 6. Ajuste de anchos
+    // 2. Ajuste de anchos para mayor legibilidad
     worksheet['!cols'] = [
-      { wch: 15 }, { wch: 60 }, { wch: 20 }, { wch: 20 }, { wch: 20 }
+      { wch: 15 }, { wch: 70 }, { wch: 25 }, { wch: 20 }, { wch: 20 }
     ];
+
+    // 3. Aplicar estilos básicos (si usas la versión Pro de SheetJS o simplemente mejoras la estructura)
+    // Nota: Si usas la versión gratuita, lo ideal es centrar los títulos mediante el contenido
+    const titulo1 = worksheet['A1'];
+    const titulo2 = worksheet['A2'];
+    
+    // Agregamos un poco de orden a los encabezados
+    headers.forEach((_, i) => {
+      const cellRef = XLSX.utils.encode_cell({ r: 3, c: i });
+      if (!worksheet[cellRef]) return;
+      worksheet[cellRef].s = { font: { bold: true }, fill: { fgColor: { rgb: "F3F4F6" } } };
+    });
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Peticiones");
-    XLSX.writeFile(workbook, "Reporte_Motivos_Oraciones_D7.xlsx");
+    
+    // Nombre del archivo limpio y profesional
+    XLSX.writeFile(workbook, "Reporte_Motivos_Oraciones_ADIEL_D7.xlsx");
   }
 
   async function exportarPDF() {
@@ -332,34 +350,57 @@ const { data: peticiones } = await supabase
     const data = await response.json();
 
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'landscape' }); // Horizontal para más espacio
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const pageWidth = doc.internal.pageSize.width;
 
-    // Títulos
-    doc.setFontSize(18);
-    doc.text("Reporte de Motivos de Oraciones", 14, 15);
-    doc.setFontSize(12);
-    doc.text("Red de Apoyo de Oración - Distrito 7 ADIEL", 14, 22);
+    // --- Encabezado ---
+    doc.setTextColor(30, 41, 59);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.text("REPORTE DE MOTIVOS DE ORACIÓN", pageWidth / 2, 18, { align: 'center' });
 
-    const tableData = data.map(p => [
-        new Date(p.creado_en).toLocaleDateString(), 
-        p.motivo, 
-        p.nombre || 'Anónimo', 
-        p.ciudad_sector
-    ]);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.setTextColor(71, 85, 105);
+    doc.text("Plataforma de Red de Apoyo en Oración ADIEL-D7", pageWidth / 2, 25, { align: 'center' });
 
-    doc.autoTable({
-        head: [['Fecha', 'Motivo de Oración', 'Autor', 'Ciudad']],
-        body: tableData,
-        startY: 30,
-        columnStyles: {
-            1: { cellWidth: 100 }, // Motivo ancho
-            0: { cellWidth: 25 }
-        },
-        styles: { fontSize: 9, cellPadding: 2 },
-        headStyles: { fillColor: [41, 128, 185] } // Azul corporativo
+    doc.setDrawColor(203, 213, 225);
+    doc.line(20, 30, pageWidth - 20, 30); 
+
+    const tableData = data.map(p => {
+      const fecha = new Date(p.creado_en);
+      const dd = String(fecha.getDate()).padStart(2, '0');
+      const mm = String(fecha.getMonth() + 1).padStart(2, '0'); // Los meses van de 0 a 11
+      const yyyy = fecha.getFullYear();
+      const fechaFormateada = `${dd}/${mm}/${yyyy}`;
+
+      return [
+          fechaFormateada, 
+          p.motivo, 
+          p.nombre || 'Anónimo', 
+          p.ciudad_sector,
+          p.iglesia || 'No especifica'
+      ];
     });
 
-    doc.save("Reporte_Motivo_Oraciones_D7.pdf");
+    doc.autoTable({
+        head: [['Fecha', 'Motivo de Oración', 'Autor', 'Ciudad', 'Iglesia']], // Encabezado actualizado
+        body: tableData,
+        startY: 38,
+        columnStyles: {
+            1: { cellWidth: 90 }, // Ajustamos un poco el motivo para dar espacio a la iglesia
+            0: { cellWidth: 25 },
+            4: { cellWidth: 40 }  // Ancho para la columna Iglesia
+        },
+        styles: { fontSize: 9, cellPadding: 3, font: "helvetica" },
+        headStyles: { 
+            fillColor: [30, 41, 59],
+            textColor: 255 
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] }
+    });
+
+    doc.save("Reporte_Motivos_Oraciones_ADIEL_D7.pdf");
   }
 </script>
 
